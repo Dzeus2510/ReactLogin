@@ -1,3 +1,4 @@
+//Trang Dashboard sẽ nhận user từ App.js để hiển thị username
 function Dashboard({ user }) {
     return (
         <div>

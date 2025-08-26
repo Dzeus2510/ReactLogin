@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+//Tạo 1 object correctLogin chứa username và password đúng
 const correctLogin = { name: "admin", password: "123456" };
 
 function Login({ setUser }) {
+
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
     let navigate = useNavigate()
 
+    //Handle khi người dùng submit form
     const handleSubmit = (e) => {
         e.preventDefault();
+        //Khi người dùng đăng nhập đúng, sẽ setUser với name là username người dùng nhập
+        //Sau đó điều hướng người dùng đến trang /dashboard
+        //nếu không đúng sẽ hiện lỗi "username/password không đúng"
         if (username === correctLogin.name && password === correctLogin.password) {
             setUser({ name: username });
             setError("");
