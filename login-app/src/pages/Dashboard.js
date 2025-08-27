@@ -55,9 +55,9 @@ function formatDate(isoString) {
                 <tbody>
                     {data.map((item) => (
                         <tr key={item.paymentId}>
-                            <th>{item.paymentId}</th>
+                            <th><a href="#" className="link">{item.paymentId}</a></th>
                             <th>{formatDate(item.createdAt)}</th>
-                            <th>{item.packageId}</th>
+                            <th><a href="#" className="link">{item.packageId}</a></th>
                             <th>{item.customerName}</th>
                             <th>{item.products.length} sản phẩm</th>
                             <th>{item.returnStatus ? <text  className="true">Đã hoàn trả </text>: <text className="false">Chưa hoàn trả</text>}</th>
