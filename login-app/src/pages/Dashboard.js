@@ -9,18 +9,33 @@ function Dashboard({ user }) {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Make GET request to fetch data
-        axios
-            .get("https://68aeaa5fb91dfcdd62b9d261.mockapi.io/customer/dashboard/Package")
-            .then((response) => {
-                setData(response.data);
-                setLoading(false);
-            })
-            .catch((err) => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get("http://localhost:8080/bill/count");
+                const rows = response.data;
+                
+                const mappedData = rows.map(row => ({
+                    id: row[0],
+                    paymentCode: row[1],
+                    createdDate: row[2],
+                    packageCode: row[3],
+                    customerName: row[4],
+                    returnStatus: row[5],
+                    receiveStatus: row[6],
+                    paymentStatus: row[7],
+                    productCount: row[8],
+                }))
+                    setData(mappedData);
+            } catch (err) {
                 setError(err.message);
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        fetchData();
     }, []);
+
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -54,15 +69,24 @@ function formatDate(isoString) {
                 </thead>
                 <tbody>
                     {data.map((item) => (
-                        <tr key={item.paymentId}>
-                            <th><a href="#" className="link">{item.paymentId}</a></th>
-                            <th>{formatDate(item.createdAt)}</th>
-                            <th><a href="#" className="link">{item.packageId}</a></th>
+                        <tr key={item.id}>
+                            <th><a href="#" className="link">{item.paymentCode}</a></th>
+                            <th>{formatDate(item.createdDate)}</th>
+                            <th><a href="#" className="link">{item.packageCode}</a></th>
                             <th>{item.customerName}</th>
-                            <th>{item.products.length} sản phẩm</th>
-                            <th>{item.returnStatus ? <text  className="true">Đã hoàn trả </text>: <text className="false">Chưa hoàn trả</text>}</th>
-                            <th>{item.receiveStatus ? <text className="true">Đã nhận hàng </text>: <text className="false">Chưa nhận hàng</text>}</th>
-                            <th>{item.paymentStatus ? <text className="true">Đang trả hàng </text>: <text className="false">Lưu trữ</text>}</th>
+                            <th className="dropdown">
+                                {item.productCount} sản phẩm
+                                {/* <div className="dropdown-content">
+                                    {item.products.map((product, index) => (
+                                        <div key={index}>
+                                            <p>Sản Phẩm {index+1}: {product.name}</p>
+                                        </div>
+                                    ))}
+                                </div> */}
+                            </th>
+                            <th>{item.returnStatus  ? <text className="true">Đã hoàn trả </text>   : <text className="false">Chưa hoàn trả</text>}</th>
+                            <th>{item.receiveStatus ? <text className="true">Đã nhận hàng </text>  : <text className="false">Chưa nhận hàng</text>}</th>
+                            <th>{item.paymentStatus ? <text className="true">Đang trả hàng </text> : <text className="false">Lưu trữ</text>}</th>
                         </tr>
                     ))}
                 </tbody>
