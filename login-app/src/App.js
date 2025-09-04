@@ -1,10 +1,13 @@
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { useState } from 'react';
+import { Box, Toolbar } from "@mui/material";
+import Sidebar from "./pages/Sidebar";
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Insert from './pages/Insert';
-import Edit from './pages/Edit';
+import DashboardBill from './pages/DashboardBill';
+import Insert from './pages/InsertBill';
+import Edit from './pages/EditBill';
+import DashboardProduct from './pages/DashboardProduct';
 
 function App() {
 
@@ -12,19 +15,25 @@ function App() {
 
   return (
     <div className="App">
-      <a href="/login">To Login Page</a>
-      <br></br>
-      <a href="/dashboard">To Dashboard</a>
-      { /*Em thêm các Routes dẫn đến trang login và dashboard ở đây*/ }
+
       <Router>
-        <Routes>
-          { /*Route Login sẽ nhận setUser để set người dùng*/ }
-          <Route path="/login" element={<Login setUser={setUser} />} />
-          { /*Route Dashboard sẽ nhận user để lấy username, và nếu user = null sẽ redirect lại về trang /*/ }
-          <Route path="/dashboard" element={< Dashboard /> } />
-          <Route path="/add-bill" element={< Insert />} />
-          <Route path="/edit-bill/:id" element={< Edit />} />
-        </Routes>
+        <Box sx={{ display: "flex" }}>
+          <Sidebar />
+
+          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+            <Toolbar />
+            <Routes>
+              { /*Route Login sẽ nhận setUser để set người dùng*/}
+              <Route path="/login" element={<Login setUser={setUser} />} />
+              { /*Route Dashboard sẽ nhận user để lấy username, và nếu user = null sẽ redirect lại về trang /*/}
+              <Route path="/dashboard" element={< DashboardBill />} />
+              <Route path="/add-bill" element={< Insert />} />
+              <Route path="/edit-bill/:id" element={< Edit />} />
+              <Route path="/products" element={<DashboardProduct />} />
+            </Routes>
+          </Box>
+        </Box>
+
       </Router>
     </div>
   );

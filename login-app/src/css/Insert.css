@@ -19,7 +19,8 @@ form {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+input[type="password"]{
   padding: 8px 12px;
   border: 1px solid #111111;
   border-radius: 6px;
@@ -28,7 +29,7 @@ input[type="number"] {
 button {
   background: #007bff;
   color: white;
-  padding: 10px;
+  padding: 10px 15%;
   border: none;
   border-radius: 6px;
   cursor: pointer;
