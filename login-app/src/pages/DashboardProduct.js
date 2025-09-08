@@ -291,8 +291,20 @@ export default function DashboardProduct() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography fontSize={14}>{product.productName}</Typography>
+                    <Typography
+                      fontSize={14}
+                      component={Link}
+                      to={`/edit-product/${product.id}`}
+                      sx={{
+                        color: "primary.main",
+                        textDecoration: "none",
+                        "&:hover": { textDecoration: "underline" },
+                      }}
+                    >
+                      {product.productName}
+                    </Typography>
                   </TableCell>
+
                   <TableCell>
                     {firstVariant ? firstVariant.inventoryQuantity : "-"}
                   </TableCell>

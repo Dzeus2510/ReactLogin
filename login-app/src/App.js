@@ -7,6 +7,7 @@ import Insert from './pages/InsertBill';
 import Edit from './pages/EditBill';
 import DashboardProduct from './pages/DashboardProduct';
 import InsertProduct from './pages/InsertProduct';
+import EditProduct from './pages/EditProduct';
 
 function App() {
 
@@ -40,6 +41,7 @@ function App() {
                 <Route path="/edit-bill/:id" element={< Edit />} />
                 <Route path="/products" element={<DashboardProduct />} />
                 <Route path="/add-product" element={<InsertProduct />} />
+                <Route path="/edit-product/:id" element={<EditProduct />} />
               </Routes>
             </Box>
           </Box>
