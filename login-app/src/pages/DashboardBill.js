@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "../css/Dashboard.css"
 
-function Dashboard({ }) {
+function Dashboard() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -89,9 +89,9 @@ function Dashboard({ }) {
                 <tbody>
                     {data.map((item) => (
                         <tr key={item.id}>
-                            <th><a href="#" className="link">{item.paymentCode}</a></th>
+                            <th><button className="link" style={{background: "white"}}>{item.paymentCode}</button></th>
                             <th>{formatDate(item.createdDate)}</th>
-                            <th><a href="#" className="link">{item.packageCode}</a></th>
+                            <th><button className="link" style={{background: "white"}}>{item.packageCode}</button></th>
                             <th>{item.customerName}</th>
                             <th className="dropdown" 
                                 onMouseEnter={() => handleMouseEnter(item.id)}

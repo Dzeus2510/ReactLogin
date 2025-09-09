@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 
 function EditBill() {
     const { id } = useParams(); // bill id từ URL
-    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         paymentCode: "",

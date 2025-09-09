@@ -5,7 +5,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Toolbar,
   Typography,
   Box,
   IconButton,
@@ -14,7 +13,6 @@ import {
   Divider,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -26,7 +24,7 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 export default function Sidebar() {
   const [open, setOpen] = useState(true);
   const [submenuOpen, setSubmenuOpen] = useState(false);
-  const drawerWidth = open ? 220 : 60;
+  const drawerWidth = open ? 230 : 50;
 
   const handleToggleSubmenu = () => setSubmenuOpen(!submenuOpen);
 
@@ -35,6 +33,7 @@ export default function Sidebar() {
       variant="permanent"
       sx={{
         width: drawerWidth,
+        fontSize: 14,
         flexShrink: 0,
         whiteSpace: "nowrap",
         [`& .MuiDrawer-paper`]: {
@@ -48,25 +47,43 @@ export default function Sidebar() {
       }}
     >
       {/* Top Logo + Toggle */}
-      <Toolbar sx={{ px: 1, justifyContent: open ? "space-between" : "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: open ? "space-between" : "center",
+          px: 1,
+          py: 1,
+        }}
+      >
         {open ? (
-          <Box display="flex" alignItems="center" width="100%" justifyContent="space-between">
-            <Box display="flex" alignItems="center">
-              <ShoppingCartIcon sx={{ fontSize: 28, mr: 1, color: "white" }} />
-              <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
-                Sapo
-              </Typography>
-            </Box>
+          <>
+            <a
+              href="/"
+              style={{
+                textDecoration: "none",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <img
+                src="https://bizweb.sapocdn.net/dev/admin/frontend/assets/sapo-logo-ncFhCziL.svg"
+                alt="logo"
+                style={{ display: "block", height: 32, width: 130, marginRight: 8 }}
+              />
+            </a>
             <IconButton onClick={() => setOpen(false)} sx={{ color: "white" }}>
               <ChevronLeftIcon />
             </IconButton>
-          </Box>
+          </>
         ) : (
           <IconButton onClick={() => setOpen(true)} sx={{ color: "white" }}>
             <ChevronRightIcon />
           </IconButton>
         )}
-      </Toolbar>
+      </Box>
+
 
       {/* Main Menu */}
       <List sx={{ mt: 2 }}>

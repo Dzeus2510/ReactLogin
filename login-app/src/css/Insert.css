@@ -1,5 +1,5 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: Inter, Arial, sans-serif;
   background: #f7f8fa;
 }
 
@@ -22,8 +22,9 @@ input[type="text"],
 input[type="number"],
 input[type="password"]{
   padding: 8px 12px;
-  border: 1px solid #111111;
   border-radius: 6px;
+  font-size: 14px;
+  min-height: 10%;
 }
 
 button {
@@ -39,3 +40,7 @@ button:hover {
   background: #0056b3;
 }
 
+.MuiTextField-root {
+  font-size: "14px";
+  min-height: "36px";
+}

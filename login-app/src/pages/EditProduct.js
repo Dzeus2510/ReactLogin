@@ -21,8 +21,17 @@ import {
   Select,
   FormGroup,
   ListItemText,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SortIcon from "@mui/icons-material/Sort";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
@@ -102,16 +111,69 @@ export default function EditProduct() {
           templates: data.templateLayout || "product",
           images: data.images || [],
           image: data.image || null,
+          options: data.options || [],
         };
+
+        const mappedAttributes = (data.options || []).map((opt) => ({
+        name: opt.name,
+        value: opt.values?.[0]?.value || "",   // lấy value đầu tiên nếu có
+        position: opt.position,
+      }));
 
         setProduct(mapped);
         setInitialProduct(mapped);
+        setAttributes(mappedAttributes);
       })
       .catch((err) => {
         console.error(err);
         alert("Không thể tải dữ liệu sản phẩm");
       });
   }, [id]);
+
+  const defaultNames = ["Kích thước", "Màu sắc", "Chất liệu"];
+    const [attributes, setAttributes] = useState([]);
+    const [openSort, setOpenSort] = useState(false);
+
+    useEffect(() => {
+  setProduct((prev) => ({
+    ...prev,
+    options: attributes.map((attr) => ({
+      name: attr.name,
+      position: attr.position,
+      values: attr.value ? [{ value: attr.value, position: 1 }] : [],
+    })),
+  }));
+}, [attributes]);
+
+  
+    const handleAddOption = () => {
+      if (attributes.length < 3) {
+        setAttributes([
+          ...attributes,
+          { name: defaultNames[attributes.length], value: "", position: attributes.length + 1 },
+        ]);
+      }
+    };
+  
+    const handleChangeOption = (index, field, newValue) => {
+      const updated = [...attributes];
+      updated[index][field] = newValue;
+      setAttributes(updated);
+    };
+  
+    const handlerDeleteOption = (index) => {
+      const updated = [...attributes];
+      updated.splice(index, 1);
+      setAttributes(updated.map((attr, i) => ({ ...attr, position: i + 1 })));
+    };
+  
+    const handleMoveOption = (from, to) => {
+      if (to < 0 || to >= attributes.length) return;
+      const updated = [...attributes];
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
+      setAttributes(updated.map((attr, i) => ({ ...attr, position: i + 1 })));
+    };
 
   useEffect(() => {
     if (product && initialProduct) {
@@ -151,7 +213,7 @@ export default function EditProduct() {
         ],
         images: product.images,
         image: product.image,
-        options: [],
+        options: product.options,
       };
 
       await axios.put(`http://localhost:8080/product/${id}`, dto);
@@ -509,19 +571,111 @@ export default function EditProduct() {
       
       
                 {/* Thuộc tính */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                      Thuộc tính
+          <Card sx={{ mb: 2 }}>
+            <CardContent sx={{ p: 2 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                  Thuộc tính
+                </Typography>
+                {attributes.length >= 2 && (
+                  <IconButton size="small" onClick={() => setOpenSort(true)}>
+                    <SortIcon />
+                  </IconButton>
+                )}
+              </Box>
+              {attributes.length === 0 && (
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  Sản phẩm có nhiều thuộc tính khác nhau. Ví dụ: kích thước, màu sắc.
+                </Typography>
+              )}
+
+              {attributes.map((attr, index) => (
+                <Box
+                  key={index}
+                  display="flex"
+                  alignItems="flex-start"
+                  gap={2}
+                  mb={2}
+                >
+                  <Box flex={1}>
+                    <Typography variant="body2" align="left" sx={{ mb: 0.5 }}>
+                      Tên thuộc tính
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Sản phẩm có nhiều thuộc tính khác nhau. Ví dụ: kích thước, màu sắc.
+                    <TextField
+                      value={attr.name}
+                      onChange={(e) =>
+                        handleChangeOption(index, "name", e.target.value)
+                      }
+                      size="small"
+                      fullWidth
+                    />
+                  </Box>
+
+                  <Box flex={1}>
+                    <Typography variant="body2" align="left" sx={{ mb: 0.5 }}>
+                      Giá trị
                     </Typography>
-                    <Button size="small" sx={{ mt: 1 }}>
-                      Thêm thuộc tính
-                    </Button>
-                  </CardContent>
-                </Card>
+                    <TextField
+                      value={attr.value}
+                      onChange={(e) =>
+                        handleChangeOption(index, "value", e.target.value)
+                      }
+                      size="small"
+                      fullWidth
+                    />
+                  </Box>
+
+                  <IconButton
+                    onClick={() => handlerDeleteOption(index)}
+                    sx={{ mt: 3 }} // đẩy nút xóa xuống thẳng hàng với textbox
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))}
+
+              {attributes.length < 3 && (
+                <Button size="small" sx={{ mt: 1 }} onClick={handleAddOption}>
+                  Thêm thuộc tính
+                </Button>
+              )}
+            </CardContent>
+
+            {/* Popup sắp xếp */}
+            <Dialog open={openSort} onClose={() => setOpenSort(false)} maxWidth="xs" fullWidth>
+              <DialogTitle>Sắp xếp thuộc tính</DialogTitle>
+              <DialogContent>
+                <List>
+                  {attributes.map((attr, index) => (
+                    <ListItem
+                      key={index}
+                      secondaryAction={
+                        <Box>
+                          <Button
+                            size="small"
+                            onClick={() => handleMoveOption(index, index - 1)}
+                          >
+                            ↑
+                          </Button>
+                          <Button
+                            size="small"
+                            onClick={() => handleMoveOption(index, index + 1)}
+                          >
+                            ↓
+                          </Button>
+                        </Box>
+                      }
+                    >
+                      <ListItemText primary={attr.name} secondary={attr.value} />
+                    </ListItem>
+                  ))}
+                </List>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenSort(false)}>Đóng</Button>
+              </DialogActions>
+            </Dialog>
+          </Card>
       
                 {/* SEO */}
                 <Card sx={{ mb: 2 }}>

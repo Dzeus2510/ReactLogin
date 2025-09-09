@@ -133,10 +133,10 @@ export default function DashboardProduct() {
   };
 
   return (
-    <Box p={2}>
+    <Box>
       {/* Header */}
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h1" sx={{ fontSize: "2em", fontWeight: 600, textAlign: "left" }}>
+        <Typography variant="h1" sx={{ fontSize: "22px", fontWeight: 550, textAlign: "left" }}>
           Danh sách sản phẩm
         </Typography>
         <Button
@@ -159,9 +159,11 @@ export default function DashboardProduct() {
 
           <TableHead>
             <TableRow >
-              <TableCell colSpan={7} sx={{ borderBottom: "none", p: 1, bgcolor: "white" }}>
-                <Tabs value={0} sx={{ minHeight: "32px" }}>
-                  <Tab label="Tất cả" sx={{ textTransform: "none", fontSize: 14 }} />
+              <TableCell colSpan={7} sx={{ borderBottom: "none", p: 1, bgcolor: "white", }}>
+                <Tabs value={0} sx={{ minHeight: "38px" }}>
+                  <Button sx={{ textTransform: "none", fontSize: 14, bgcolor: "none", color: "rgb(0, 136, 255)", "&:hover": {bgcolor: "white"} }}>
+                    Tất cả
+                  </Button>
                 </Tabs>
               </TableCell>
             </TableRow>
@@ -264,6 +266,7 @@ export default function DashboardProduct() {
                   key={product.id}
                   hover
                   sx={{
+                    height: "70px",
                     "&:hover": { backgroundColor: "#fafafa" },
                   }}
                 >
@@ -277,7 +280,7 @@ export default function DashboardProduct() {
                     <Box display="flex" alignItems="center" gap={1}>
                       {product.images?.length > 0 && (
                         <img
-                          src={product.images[0].src}
+                          src={product.images[0].src }
                           alt={product.images[0].filename}
                           style={{
                             width: 38,
@@ -288,6 +291,18 @@ export default function DashboardProduct() {
                           }}
                         />
                       )}
+                      {!product.images?.length && (
+                    <img src={"data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2024%2024'><path%20fill='rgb(211,%20213,%20215)'%20d='M19%203h-14c-1.103%200-2%20.897-2%202v14c0%201.103.897%202%202%202h14c1.103%200%202-.897%202-2v-14c0-1.103-.897-2-2-2m-14%2016v-14h14l.002%2014z'/><path%20fill='rgb(211,%20213,%20215)'%20d='m10%2014-1-1-3%204h12l-5-7z'/><path%20fill='rgb(211,%20213,%20215)'%20d='M8.5%2011a1.5%201.5%200%201%200%200-3%201.5%201.5%200%200%200%200%203'/></svg>"} 
+                    alt="None" 
+                    style={{
+                            width: 38,
+                            height: 38,
+                            objectFit: "cover",
+                            borderRadius: 6,
+                            border: "1px solid #d3d5d7",
+                          }}
+                    />
+                )}
                     </Box>
                   </TableCell>
                   <TableCell>
@@ -296,7 +311,7 @@ export default function DashboardProduct() {
                       component={Link}
                       to={`/edit-product/${product.id}`}
                       sx={{
-                        color: "primary.main",
+                        color: "rgb(0, 136, 255)",
                         textDecoration: "none",
                         "&:hover": { textDecoration: "underline" },
                       }}

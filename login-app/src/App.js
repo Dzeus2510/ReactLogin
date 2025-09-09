@@ -24,6 +24,10 @@ function App() {
       fontSize: "8px",
       fontWeight: 550,
     },
+    MuiMuiTextField: {
+      fontSize: "7px",
+      
+    }
   })
 
   return (
