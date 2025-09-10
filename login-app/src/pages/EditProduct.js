@@ -9,13 +9,11 @@ import {
   Button,
   Checkbox,
   FormControlLabel,
-  Divider,
   Table,
   TableBody,
   TableCell,
-  Paper,
   MenuItem,
-  TableContainer,
+  TableHead,
   TableRow,
   FormControl,
   Select,
@@ -28,30 +26,22 @@ import {
   DialogActions,
   List,
   ListItem,
+  InputAdornment,
+  Stack,
+  Chip,
+  AppBar,
+  Toolbar,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SortIcon from "@mui/icons-material/Sort";
+import AddIcon from '@mui/icons-material/Add';
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 export default function EditProduct() {
   const navigate = useNavigate();
   const { id } = useParams();
-
-  const storeOptions = [
-    { value: "main", label: "Cửa hàng chính" },
-    { value: "hn", label: "Hà Nội" },
-    { value: "hcm", label: "Thành phố Hồ Chí Minh" },
-  ];
-
-  const [selectedStores, setSelectedStores] = useState([]);
-  const [storeQuantities, setStoreQuantities] = useState({});
-
-  const inventoryQuantity = Object.values(storeQuantities).reduce(
-    (sum, q) => sum + (q || 0),
-    0
-  );
 
   const convertToGram = (value, unit) => {
     switch (unit) {
@@ -83,6 +73,7 @@ export default function EditProduct() {
     templates: "product",
     images: [],
     image: null,
+    options: [],
   });
 
   const [initialProduct, setInitialProduct] = useState(null);
@@ -91,7 +82,7 @@ export default function EditProduct() {
   // Lấy dữ liệu sản phẩm khi vào trang edit
   useEffect(() => {
     axios.get(`http://localhost:8080/product/${id}`)
-      .then((res) => {      
+      .then((res) => {
         const data = res.data;
 
         const mapped = {
@@ -115,10 +106,10 @@ export default function EditProduct() {
         };
 
         const mappedAttributes = (data.options || []).map((opt) => ({
-        name: opt.name,
-        value: opt.values?.[0]?.value || "",   // lấy value đầu tiên nếu có
-        position: opt.position,
-      }));
+          name: opt.name,
+          values: (opt.values || []).map(v => ({ value: v.value })),
+          position: opt.position,
+        }));
 
         setProduct(mapped);
         setInitialProduct(mapped);
@@ -131,49 +122,131 @@ export default function EditProduct() {
   }, [id]);
 
   const defaultNames = ["Kích thước", "Màu sắc", "Chất liệu"];
-    const [attributes, setAttributes] = useState([]);
-    const [openSort, setOpenSort] = useState(false);
+  const [attributes, setAttributes] = useState([]);
+  const [openSort, setOpenSort] = useState(false);
 
-    useEffect(() => {
-  setProduct((prev) => ({
-    ...prev,
-    options: attributes.map((attr) => ({
-      name: attr.name,
-      position: attr.position,
-      values: attr.value ? [{ value: attr.value, position: 1 }] : [],
-    })),
-  }));
-}, [attributes]);
+  useEffect(() => {
+    setProduct((prev) => ({
+      ...prev,
+      options: attributes.map((attr) => ({
+        name: attr.name,
+        position: attr.position,
+        values: attr.value ? [{ value: attr.value, position: 1 }] : [],
+      })),
+    }));
+  }, [attributes]);
 
-  
-    const handleAddOption = () => {
-      if (attributes.length < 3) {
-        setAttributes([
-          ...attributes,
-          { name: defaultNames[attributes.length], value: "", position: attributes.length + 1 },
-        ]);
-      }
-    };
-  
-    const handleChangeOption = (index, field, newValue) => {
-      const updated = [...attributes];
-      updated[index][field] = newValue;
+
+  const handleAddOption = () => {
+    if (attributes.length < 3) {
+      setAttributes([
+        ...attributes,
+        { name: defaultNames[attributes.length], values: [], tempValue: "", position: attributes.length + 1 },
+      ]);
+    }
+  };
+
+  const handleChangeOption = (index, field, newValue) => {
+    const updated = [...attributes];
+    updated[index][field] = newValue;
+    setAttributes(updated);
+  };
+
+  const handleAddValue = (index, newValue) => {
+    if (!newValue.trim()) return;
+    const updated = [...attributes];
+    if (!updated[index].values.includes(newValue)) {
+      updated[index].values.push(newValue);
+      updated[index].tempValue = "";
       setAttributes(updated);
+    }
+  }
+
+  const handleDeleteValue = (index, valIndex) => {
+    const updated = [...attributes];
+    updated[index].values.splice(valIndex, 1);
+    setAttributes(updated);
+  };
+
+  const handlerDeleteOption = (index) => {
+    const updated = [...attributes];
+    updated.splice(index, 1);
+    setAttributes(updated.map((attr, i) => ({ ...attr, position: i + 1 })));
+  };
+
+  const handleMoveOption = (from, to) => {
+    if (to < 0 || to >= attributes.length) return;
+    const updated = [...attributes];
+    const [moved] = updated.splice(from, 1);
+    updated.splice(to, 0, moved);
+    setAttributes(updated.map((attr, i) => ({ ...attr, position: i + 1 })));
+  };
+
+  const [openUrlDialog, setOpenUrlDialog] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+
+  const handleFiles = (files) => {
+    if (!files || files.length === 0) return;
+
+    const newImages = [];
+    files.forEach((file) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+
+      img.onload = () => {
+        const imageInfo = {
+          src: img.src,
+          alt: file.name,
+          filename: file.name,
+          size: file.size,
+          width: img.width,
+          height: img.height,
+        };
+
+        newImages.push(imageInfo);
+
+        if (newImages.length === files.length) {
+          setProduct((prev) => {
+            const updatedImages = [...(prev.images || []), ...newImages];
+            return {
+              ...prev,
+              images: updatedImages,
+              image: updatedImages[0],
+            };
+          });
+        }
+      };
+    });
+  };
+
+  const handleAddUrl = () => {
+    if (!urlInput) return;
+    const img = new Image();
+    img.src = urlInput;
+
+    img.onload = () => {
+      const imageInfo = {
+        src: urlInput,
+        alt: "Image from URL",
+        filename: urlInput,
+        size: 0,
+        width: img.width,
+        height: img.height,
+      };
+
+      setProduct((prev) => {
+        const updatedImages = [...(prev.images || []), imageInfo];
+        return {
+          ...prev,
+          images: updatedImages,
+          image: updatedImages[0],
+        };
+      });
     };
-  
-    const handlerDeleteOption = (index) => {
-      const updated = [...attributes];
-      updated.splice(index, 1);
-      setAttributes(updated.map((attr, i) => ({ ...attr, position: i + 1 })));
-    };
-  
-    const handleMoveOption = (from, to) => {
-      if (to < 0 || to >= attributes.length) return;
-      const updated = [...attributes];
-      const [moved] = updated.splice(from, 1);
-      updated.splice(to, 0, moved);
-      setAttributes(updated.map((attr, i) => ({ ...attr, position: i + 1 })));
-    };
+
+    setUrlInput("");
+    setOpenUrlDialog(false);
+  };
 
   useEffect(() => {
     if (product && initialProduct) {
@@ -226,704 +299,731 @@ export default function EditProduct() {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: "1400px", mx: "auto" }}>
-      {/* Header */}
-      <Box display="flex" alignItems="center" mb={3}>
-        <Button
-          component={Link}
-          to={"/products"}
-          variant="outlined"
-          sx={{ mr: 2, minWidth: 40 }}
-        >
-          <ArrowBackIcon />
-        </Button>
-        <Typography variant="h6" fontWeight="bold">
-          Chỉnh sửa sản phẩm
-        </Typography>
-      </Box>
+    <>
+      <AppBar
+        position="fixed"
+        elevation={1}
+        sx={{
+          bgcolor: "white",
+          color: "black",
+          top: 0,
+          left: 0,
+          mx: -3, // đè padding ngang main
+          width: "calc(100% + 48px)", // full width
+        }}
+      >
+        <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
+        </Toolbar>
+      </AppBar>
 
-      <Grid container spacing={2} alignItems="flex-start" wrap="nowrap">
-              {/* LEFT COLUMN */}
-              <Grid item xs={12} md={8}>
-                {/* Thông tin sản phẩm */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                      Thông tin sản phẩm
-                    </Typography>
-                    <Typography required variant="body2" align="left" sx={{ mt: 1 }}>
-                      Tên sản phẩm
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="Nhập tên sản phẩm"
-                      margin="dense"
-                      value={product.name}
-                      onChange={handleChange("name")}
-                    />
-                    <Grid
-                      container
-                      spacing={2}
-                      wrap="wrap"
-                      sx={{ alignItems: "flex-start", justifyContent: "flex-start" }}
-                    >
-                      <Grid
-                        item
-                        sx={{
-                          flexBasis: { xs: "100%", sm: "48%" },
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Mã SKU
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Mã SKU"
-                          margin="dense"
-                          value={product.sku}
-                          onChange={handleChange("sku")}
-                        />
-                      </Grid>
-                      <Grid
-                        item
-                        sx={{
-                          flexBasis: { xs: "100%", sm: "48%" },
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Mã vạch / Barcode
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Mã vạch / Barcode"
-                          margin="dense"
-                          value={product.barcode}
-                          onChange={handleChange("barcode")}
-                        />
-                      </Grid>
-                      <Grid
-                        item
-                        sx={{
-                          flexBasis: { xs: "100%", sm: "48%" },
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Đơn vị tính
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Đơn vị tính"
-                          margin="dense"
-                          value={product.unit}
-                          onChange={handleChange("unit")}
-                        />
-                      </Grid>
-                    </Grid>
-      
-                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                      Mô tả
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="Mô tả sản phẩm"
-                      multiline
-                      rows={6}
-                      margin="dense"
-                      value={product.description}
-                      onChange={handleChange("description")}
-                    />
-                  </CardContent>
-                </Card>
-      
-                {/* Thông tin giá */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                      Thông tin giá
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item
-                        sx={{
-                          flexBasis: { xs: "100%", sm: "48%" },
-                          boxSizing: "border-box",
-                        }}>
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Giá bán
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Giá bán"
-                          margin="dense"
-                          value={product.price}
-                          onChange={handleChange("price")}
-                        />
-                      </Grid>
-                      <Grid item
-                        sx={{
-                          flexBasis: { xs: "100%", sm: "48%" },
-                          boxSizing: "border-box",
-                        }}>
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Giá so sánh
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Giá so sánh"
-                          margin="dense"
-                          value={product.compareAtPrice}
-                          onChange={handleChange("compareAtPrice")}
-                        />
-                      </Grid>
-                      <Grid item
-                        sx={{
-                          flexBasis: { xs: "100%", sm: "48%" },
-                          boxSizing: "border-box",
-                        }}>
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Giá vốn
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          placeholder="Giá vốn"
-                          margin="dense"
-                        />
-                      </Grid>
-                    </Grid>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={product.taxable}
-                          onChange={handleChange("taxable")}
-                        />
-                      }
-                      label="Áp dụng thuế"
-                    />
-                  </CardContent>
-                </Card>
-      
-                {/* Thông tin kho */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                      Thông tin kho
-                    </Typography>
-      
-                    {/* Dropdown chọn cửa hàng */}
-                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                      Lưu kho tại
-                    </Typography>
-                    <FormControl fullWidth margin="dense">
-                      <Select
-                        multiple
-                        displayEmpty
-                        value={selectedStores}
-                        onChange={(e) => {
-                          const stores = e.target.value;
-                          setSelectedStores(stores);
-      
-                          // reset quantity khi bỏ chọn
-                          setStoreQuantities((prev) => {
-                            const updated = { ...prev };
-                            Object.keys(updated).forEach((key) => {
-                              if (!stores.includes(key)) delete updated[key];
-                            });
-                            return updated;
-                          });
-                        }}
-                        renderValue={(selected) => {
-                          if (selected.length === 0) {
-                            return <em>Chọn cửa hàng</em>;
-                          }
-                          if (selected.length === 1) {
-                            return storeOptions.find((s) => s.value === selected[0])?.label;
-                          }
-                          return `Đã lưu tại ${selected.length} cửa hàng`;
-                        }}
-                      >
-                        {storeOptions.map((store) => (
-                          <MenuItem key={store.value} value={store.value}>
-                            <Checkbox checked={selectedStores.indexOf(store.value) > -1} />
-                            <ListItemText primary={store.label} />
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-      
-                    {/* Các tùy chọn quản lý kho */}
-                    <FormGroup sx={{ mt: 2 }}>
-                      <FormControlLabel
-                        control={<Checkbox defaultChecked />}
-                        label="Quản lý số lượng tồn kho"
-                      />
-                      <FormControlLabel control={<Checkbox />} label="Cho phép bán âm" />
-                      <FormControlLabel
-                        control={<Checkbox />}
-                        label="Quản lý sản phẩm theo lô - HSD"
-                      />
-                    </FormGroup>
-      
-                    <Divider sx={{ my: 2 }} />
-      
-                    <Typography variant="body2" fontWeight="bold" mb={1}>
-                      Bảng phân bổ tồn kho
-                    </Typography>
-      
-                    {/* Bảng phân bổ */}
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableBody>
-                          {selectedStores.map((storeId) => {
-                            const store = storeOptions.find((s) => s.value === storeId);
-                            return (
-                              <TableRow key={storeId}>
-                                <TableCell sx={{ fontWeight: "500", width: "40%" }}>
-                                  {store?.label}
-                                </TableCell>
-                                <TableCell>
-                                  <TextField
-                                    fullWidth
-                                    size="small"
-                                    type="number"
-                                    value={storeQuantities[storeId] || ""}
-                                    onChange={(e) => {
-                                      const value = parseInt(e.target.value, 10) || 0;
-                                      setStoreQuantities((prev) => ({
-                                        ...prev,
-                                        [storeId]: value,
-                                      }));
-                                    }}
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-      
-                    {/* Tổng tồn kho */}
-                    <Typography variant="body2" fontWeight="bold" mt={2}>
-                      Tổng số lượng: {inventoryQuantity}
-                    </Typography>
-                  </CardContent>
-                </Card>
-      
-                {/* Vận chuyển */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                      Vận chuyển
-                    </Typography>
-      
-                    <FormControlLabel
-                      control={<Checkbox defaultChecked />}
-                      label="Sản phẩm yêu cầu vận chuyển"
-                      value={product.requireShipping}
-                      onChange={handleChange("requireShipping")}
-                    />
-      
-                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                      Khối lượng
-                    </Typography>
-      
-                    <TextField
-                      fullWidth
-                      placeholder="Khối lượng"
-                      margin="dense"
-                      value={product.weight}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        setProduct((prev) => {
-                          const gram = convertToGram(value, prev.weightUnit);
-                          return { ...prev, weight: value, gram };
-                        });
-                      }}
-                      InputProps={{
-                        endAdornment: (
-                          <FormControl sx={{ minWidth: 70, ml: 1 }}>
-                            <Select
-      
-                              value={product.weightUnit}
-                              onChange={(e) => {
-                                const unit = e.target.value;
-                                setProduct((prev) => {
-                                  const gram = convertToGram(prev.weight, unit);
-                                  return { ...prev, weightUnit: unit, gram };
-                                });
-                              }}
-                              displayEmpty
-                              variant="standard"
-                            >
-                              <MenuItem value="g">g</MenuItem>
-                              <MenuItem value="kg">kg</MenuItem>
-                              <MenuItem value="oz">oz</MenuItem>
-                              <MenuItem value="lb">lb</MenuItem>
-                            </Select>
-                          </FormControl>
-                        ),
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-      
-      
-                {/* Thuộc tính */}
-          <Card sx={{ mb: 2 }}>
-            <CardContent sx={{ p: 2 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                  Thuộc tính
-                </Typography>
-                {attributes.length >= 2 && (
-                  <IconButton size="small" onClick={() => setOpenSort(true)}>
-                    <SortIcon />
-                  </IconButton>
-                )}
-              </Box>
-              {attributes.length === 0 && (
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  Sản phẩm có nhiều thuộc tính khác nhau. Ví dụ: kích thước, màu sắc.
-                </Typography>
-              )}
+      <Box sx={{ p: 3, mx: "auto", maxWidth: "68%" }}>
+        {/* Header */}
+        <Box display="flex" minWidth={"51%"} maxWidth={"calc(100% -16px)"} alignItems="center" mb={3}>
+          <Button
+            component={Link}
+            to={"/products"}
+            variant="outlined"
+            borderRadius={6}
+            sx={{ mr: 2, minWidth: 36, minHeight: 36, padding: "5px 5px", border: "1px solid rgb(211, 213, 215)", background: "rgb(255, 255, 255)" }}
+          >
+            <ArrowBackIcon
+              viewbox="0 0 20 20"
+              sx={{ color: "rgb(163, 168, 175)" }}
+            />
+          </Button>
+          <Typography variant="h5" fontWeight="550">
+            Thêm sản phẩm
+          </Typography>
+        </Box>
 
-              {attributes.map((attr, index) => (
-                <Box
-                  key={index}
-                  display="flex"
-                  alignItems="flex-start"
-                  gap={2}
-                  mb={2}
+        <Grid container spacing={2} alignItems="flex-start" wrap="wrap">
+          {/* LEFT COLUMN */}
+          <Grid item xs={12} md={8} sx={{ flex: "2.04425 2.04425 693px" }}>
+            {/* Thông tin sản phẩm */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                  Thông tin sản phẩm
+                </Typography>
+                <Typography required variant="body2" align="left" sx={{ mt: 1 }}>
+                  Tên sản phẩm
+                </Typography>
+                <TextField
+                  class="MuiTextField-root"
+                  fullWidth
+                  placeholder="Nhập tên sản phẩm (Tối đa 320 ký tự)"
+                  inputProps={{ maxLength: 320 }}
+                  margin="dense"
+                  value={product.name}
+                  onChange={handleChange("name")}
+                />
+                <Grid
+                  container
+                  spacing={2}
+                  wrap="wrap"
+                  sx={{ alignItems: "flex-start", justifyContent: "flex-start" }}
                 >
-                  <Box flex={1}>
-                    <Typography variant="body2" align="left" sx={{ mb: 0.5 }}>
-                      Tên thuộc tính
-                    </Typography>
-                    <TextField
-                      value={attr.name}
-                      onChange={(e) =>
-                        handleChangeOption(index, "name", e.target.value)
-                      }
-                      size="small"
-                      fullWidth
-                    />
-                  </Box>
-
-                  <Box flex={1}>
-                    <Typography variant="body2" align="left" sx={{ mb: 0.5 }}>
-                      Giá trị
-                    </Typography>
-                    <TextField
-                      value={attr.value}
-                      onChange={(e) =>
-                        handleChangeOption(index, "value", e.target.value)
-                      }
-                      size="small"
-                      fullWidth
-                    />
-                  </Box>
-
-                  <IconButton
-                    onClick={() => handlerDeleteOption(index)}
-                    sx={{ mt: 3 }} // đẩy nút xóa xuống thẳng hàng với textbox
+                  <Grid
+                    item
+                    sx={{
+                      flexBasis: { xs: "100%", sm: "48%" },
+                      boxSizing: "border-box",
+                    }}
                   >
-                    <DeleteIcon />
-                  </IconButton>
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Mã SKU
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder="Nhập mã SKU (Tối đa 50 ký tự)"
+                      inputProps={{ maxLength: 50 }}
+                      margin="dense"
+                      value={product.sku}
+                      onChange={handleChange("sku")}
+                    />
+                  </Grid>
+                  <Grid
+                    item
+                    sx={{
+                      flexBasis: { xs: "100%", sm: "48%" },
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Mã vạch / Barcode
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder="Nhập Mã vạch / Barcode (Tối đa 50 ký tự)"
+                      inputProps={{ maxLength: 50 }}
+                      margin="dense"
+                      value={product.barcode}
+                      onChange={handleChange("barcode")}
+                    />
+                  </Grid>
+                  <Grid
+                    item
+                    sx={{
+                      flexBasis: { xs: "100%", sm: "48%" },
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Đơn vị tính
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder="Điền đơn vị tính"
+                      margin="dense"
+                      value={product.unit}
+                      onChange={handleChange("unit")}
+                    />
+                  </Grid>
+                </Grid>
+
+                <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                  Mô tả
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  margin="dense"
+                  value={product.description}
+                  onChange={handleChange("description")}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Thông tin giá */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                  Thông tin giá
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item
+                    sx={{
+                      flexBasis: { xs: "100%", sm: "48%" },
+                      boxSizing: "border-box",
+                    }}>
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Giá bán
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      placeholder="Nhập giá bán sản phẩm"
+                      margin="dense"
+                      value={product.price}
+                      onChange={handleChange("price")}
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">₫</InputAdornment>,
+                      }}
+                    />
+                  </Grid>
+                  <Grid item
+                    sx={{
+                      flexBasis: { xs: "100%", sm: "48%" },
+                      boxSizing: "border-box",
+                    }}>
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Giá so sánh
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      placeholder="Nhập giá so sánh sản phẩm"
+                      margin="dense"
+                      value={product.compareAtPrice}
+                      onChange={handleChange("compareAtPrice")}
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">₫</InputAdornment>,
+                      }}
+                    />
+                  </Grid>
+                  <Grid item
+                    sx={{
+                      flexBasis: { xs: "100%", sm: "48%" },
+                      boxSizing: "border-box",
+                    }}>
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Giá vốn
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      placeholder="Nhập giá vốn sản phẩm"
+                      margin="dense"
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end" >₫</InputAdornment>,
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+                <FormControlLabel
+                  align="left"
+                  control={
+                    <Checkbox
+                      checked={product.taxable}
+                      onChange={handleChange("taxable")}
+                    />
+                  }
+                  label="Áp dụng thuế"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Thông tin kho */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                  Thông tin kho
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  placeholder="Nhập số lượng tồn kho"
+                  margin="dense"
+                  value={product.inventoryQuantity}
+                  onChange={handleChange("inventoryQuantity")}
+                />
+              </CardContent>
+            </Card>
+
+
+            {/* Vận chuyển */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                  Vận chuyển
+                </Typography>
+
+                <FormControlLabel
+                  control={<Checkbox defaultChecked />}
+                  label="Sản phẩm yêu cầu vận chuyển"
+                  value={product.requireShipping}
+                  onChange={handleChange("requireShipping")}
+                />
+
+                <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                  Khối lượng
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  placeholder="Nhập khối lượng"
+                  margin="dense"
+                  value={product.weight || 0}
+                  type="number"
+                  sx={{ width: "50%" }}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 0;
+                    setProduct((prev) => {
+                      const gram = convertToGram(value, prev.weightUnit);
+                      return { ...prev, weight: value, gram };
+                    });
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <FormControl sx={{ minWidth: 45, ml: 1, pl: 1, borderLeft: "1px solid #ccc", }}>
+                        <Select
+                          value={product.weightUnit}
+                          onChange={(e) => {
+                            const unit = e.target.value;
+                            setProduct((prev) => {
+                              const gram = convertToGram(prev.weight, unit);
+                              return { ...prev, weightUnit: unit, gram };
+                            });
+                          }}
+                          displayEmpty
+                          variant="standard"
+                          disableUnderline
+                        >
+                          <MenuItem value="g">g</MenuItem>
+                          <MenuItem value="kg">kg</MenuItem>
+                          <MenuItem value="oz">oz</MenuItem>
+                          <MenuItem value="lb">lb</MenuItem>
+                        </Select>
+                      </FormControl>
+                    ),
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+
+            {/* Thuộc tính */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                    Thuộc tính
+                  </Typography>
+                  {attributes.length >= 2 && (
+                    <IconButton size="small" onClick={() => setOpenSort(true)}>
+                      <SortIcon />
+                      <Typography variant="body2" color="text.secondary" mr={0.5}>
+                        Sắp xếp Thuộc Tính
+                      </Typography>
+                    </IconButton>
+                  )}
+                  {attributes.length === 0 && (
+                    <Button size="small" sx={{ mt: 1 }} onClick={handleAddOption}>
+                      Thêm thuộc tính
+                    </Button>
+                  )}
                 </Box>
-              ))}
 
-              {attributes.length < 3 && (
-                <Button size="small" sx={{ mt: 1 }} onClick={handleAddOption}>
-                  Thêm thuộc tính
-                </Button>
-              )}
-            </CardContent>
+                {attributes.length === 0 && (
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Sản phẩm có nhiều thuộc tính khác nhau. Ví dụ: kích thước, màu sắc.
+                  </Typography>
+                )}
 
-            {/* Popup sắp xếp */}
-            <Dialog open={openSort} onClose={() => setOpenSort(false)} maxWidth="xs" fullWidth>
-              <DialogTitle>Sắp xếp thuộc tính</DialogTitle>
-              <DialogContent>
-                <List>
-                  {attributes.map((attr, index) => (
-                    <ListItem
-                      key={index}
-                      secondaryAction={
-                        <Box>
-                          <Button
-                            size="small"
-                            onClick={() => handleMoveOption(index, index - 1)}
-                          >
-                            ↑
-                          </Button>
-                          <Button
-                            size="small"
-                            onClick={() => handleMoveOption(index, index + 1)}
-                          >
-                            ↓
-                          </Button>
-                        </Box>
-                      }
-                    >
-                      <ListItemText primary={attr.name} secondary={attr.value} />
-                    </ListItem>
-                  ))}
-                </List>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setOpenSort(false)}>Đóng</Button>
-              </DialogActions>
-            </Dialog>
-          </Card>
-      
-                {/* SEO */}
+                {attributes.length > 0 && (
+                  <Table
+                    size="small"
+                    sx={{
+                      "& .MuiTableCell-root": {
+                        border: "none",
+                        padding: "8px",
+                        verticalAlign: "top",
+                      },
+                      "& .MuiTableCell-head": {
+                        borderBottom: "1px solid rgba(0,0,0,0.12)",
+                        fontWeight: 600,
+                        fontSize: "0.875rem",
+                      },
+                    }}
+                  >
+                    <TableHead sx={{ bgcolor: "white" }}>
+                      <TableRow>
+                        <TableCell width="30%">Tên thuộc tính</TableCell>
+                        <TableCell width="60%">Giá trị</TableCell>
+                        <TableCell width="10%"></TableCell>
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {attributes.map((attr, index) => (
+                        <TableRow key={index}>
+                          {/* Tên thuộc tính */}
+                          <TableCell>
+                            <TextField
+                              placeholder="Nhập tên thuộc tính"
+                              value={attr.name}
+                              onChange={(e) =>
+                                handleChangeOption(index, "name", e.target.value)
+                              }
+                              size="small"
+                              fullWidth
+                            />
+                          </TableCell>
+
+                          {/* Giá trị */}
+                          <TableCell>
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                              {(attr.values || []).map((val, vIndex) => (
+                                <Chip
+                                  key={vIndex}
+                                  label={typeof val === "string" ? val : val.value}   // 🔥 lấy chuỗi
+                                  size="small"
+                                  onDelete={() => handleDeleteValue(index, vIndex)}
+                                />
+                              ))}
+                            </Box>
+                            <TextField
+                              placeholder="Nhập và Enter để thêm"
+                              value={attr.tempValue || ""}
+                              onChange={(e) =>
+                                handleChangeOption(index, "tempValue", e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleAddValue(index, attr.tempValue || "");
+                                }
+                              }}
+                              size="small"
+                              fullWidth
+                              sx={{ mt: 1 }}
+                            />
+                          </TableCell>
+
+
+                          {/* Nút xóa */}
+                          <TableCell align="center">
+                            <IconButton onClick={() => handlerDeleteOption(index)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
+                {attributes.length < 3 && attributes.length > 0 && (
+                  <Button size="small" sx={{ mt: 1 }} onClick={handleAddOption}>
+                    Thêm thuộc tính khác
+                  </Button>
+                )}
+              </CardContent>
+
+
+
+              {/* Popup sắp xếp */}
+              <Dialog open={openSort} onClose={() => setOpenSort(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Sắp xếp thuộc tính</DialogTitle>
+                <DialogContent>
+                  <List>
+                    {attributes.map((attr, index) => (
+                      <ListItem
+                        key={index}
+                        secondaryAction={
+                          <Box>
+                            <Button
+                              size="small"
+                              onClick={() => handleMoveOption(index, index - 1)}
+                            >
+                              ↑
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => handleMoveOption(index, index + 1)}
+                            >
+                              ↓
+                            </Button>
+                          </Box>
+                        }
+                      >
+                        <ListItemText primary={attr.name} secondary={attr.value} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setOpenSort(false)}>Đóng</Button>
+                </DialogActions>
+              </Dialog>
+            </Card>
+
+            {/* SEO */}
+            <Card sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                    Tối ưu SEO
+                  </Typography>
+                  <Button size="small" sx={{ mt: 1 }}>
+                    Tùy chỉnh SEO
+                  </Button>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Xin hãy nhập Tiêu đề và Mô tả để xem trước kết quả tìm kiếm của sản phẩm này.
+                </Typography>
+
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* RIGHT COLUMN */}
+          <Grid item xs={12} md={4} sx={{ flex: "1 1 339px" }}>
+            <Box display="flex" justifyContent="flex-end">
+              <Box sx={{ width: "100%", maxWidth: 400 }}>
+                {/* Ảnh sản phẩm */}
                 <Card sx={{ mb: 2 }}>
                   <CardContent sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                      Tối ưu SEO
+                    <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                      Ảnh sản phẩm
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Xin hãy nhập Tiêu đề và Mô tả để xem trước kết quả tìm kiếm của sản phẩm này.
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      hidden
+                      id="upload-images"
+                      onChange={(e) => handleFiles(Array.from(e.target.files || []))}
+                    />
+                    <Box
+                      sx={{
+                        border: "1px dashed grey",
+                        p: 3,
+                        textAlign: "center",
+                        borderRadius: 1,
+                        "&:hover": {
+                          border: "1px dashed blue",
+                          cursor: "pointer",
+                        },
+                      }}
+                      onClick={() => document.getElementById("upload-images").click()}
+                    >
+                      <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" mb={1}>
+                        <AddIcon sx={{ color: "gray" }} />
+                        <Typography variant="body2" color="text.secondary">
+                          Kéo thả hoặc{" "}
+                          <Box
+                            component="span"
+                            sx={{
+                              color: "primary.main",
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenUrlDialog(true);
+                            }}
+                          >
+                            thêm ảnh từ URL
+                          </Box>
+                        </Typography>
+                      </Stack>
+
+                      {/* Link tải ảnh */}
+                      <label htmlFor="upload-images" onClick={(e) => e.stopPropagation()}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "primary.main",
+                            cursor: "pointer",
+                            "&:hover": { textDecoration: "underline" },
+                          }}
+                        >
+                          Tải ảnh lên từ thiết bị
+                        </Typography>
+                      </label>
+
+                      <Typography variant="caption" display="block" mt={1}>
+                        (Dung lượng ảnh tối đa 2MB)
+                      </Typography>
+                    </Box>
+
+                    {/* Preview ảnh */}
+                    {product.images && product.images.length > 0 && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="body2" fontWeight="bold" mb={1}>
+                          Danh sách ảnh
+                        </Typography>
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                          {product.images.map((img, index) => (
+                            <Box
+                              key={index}
+                              sx={{
+                                border: index === 0 ? "2px solid #1976d2" : "1px solid lightgrey",
+                                borderRadius: 2,
+                                p: 1,
+                                textAlign: "center",
+                                width: 120,
+                              }}
+                            >
+                              <img
+                                src={img.src}
+                                alt={img.alt}
+                                style={{ maxWidth: "100%", maxHeight: 100, borderRadius: 4 }}
+                              />
+                              <Typography variant="caption" display="block" noWrap>
+                                {img.filename}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {(img.size / 1024).toFixed(1)} KB
+                              </Typography>
+                              {index === 0 && (
+                                <Typography
+                                  variant="caption"
+                                  color="primary"
+                                  display="block"
+                                  fontWeight="bold"
+                                >
+                                  Ảnh chính
+                                </Typography>
+                              )}
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </CardContent>
+
+                  {/* Popup nhập URL */}
+                  <Dialog fullWidth open={openUrlDialog} onClose={() => setOpenUrlDialog(false)}>
+                    <DialogTitle>Thêm ảnh từ URL</DialogTitle>
+                    <DialogContent>
+                      <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                        Đường dẫn ảnh
+                      </Typography>
+                      <TextField
+                        autoFocus
+                        fullWidth
+                        margin="dense"
+                        placeholder="https://"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setOpenUrlDialog(false)}>Hủy</Button>
+                      <Button onClick={handleAddUrl} variant="contained">
+                        Xác nhận
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </Card>
+
+
+                {/* Kênh bán hàng */}
+                <Card sx={{ mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                      Kênh bán hàng
                     </Typography>
+
+                    <FormGroup>
+                      {["Lazada", "Tiktok Shop", "Shopee", "Facebook"].map((ch) => (
+                        <Box>
+                          <FormControlLabel
+                            key={ch}
+                            control={<Checkbox defaultChecked />}
+                            label={ch}
+                          />
+                          <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                            Áp dụng bảng giá <Link to={"#"} style={{ textDecoration: "none", variant: "body2", align: "left", color: "blue" }}> {ch} </Link>
+                          </Typography>
+                        </Box>
+                      ))}
+                    </FormGroup>
+
                     <Button size="small" sx={{ mt: 1 }}>
-                      Tùy chỉnh SEO
+                      Xem thêm
                     </Button>
                   </CardContent>
                 </Card>
-              </Grid>
-      
-              {/* RIGHT COLUMN */}
-              <Grid item xs={12} md={4}>
-                <Box display="flex" justifyContent="flex-end">
-                  <Box sx={{ width: "100%", maxWidth: 400 }}>
-                    {/* Ảnh sản phẩm */}
-                    <Card sx={{ mb: 2 }}>
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                          Ảnh sản phẩm
-                        </Typography>
-      
-                        <Box
-                          sx={{
-                            border: "1px dashed grey",
-                            p: 3,
-                            textAlign: "center",
-                            borderRadius: 1,
-                          }}
-                        >
-                          <Typography variant="body2" color="text.secondary">
-                            Kéo thả hoặc thêm ảnh từ URL
-                          </Typography>
-      
-                          {/* Input chọn nhiều ảnh */}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            hidden
-                            id="upload-images"
-                            onChange={(e) => {
-                              const files = Array.from(e.target.files || []);
-                              if (files.length === 0) return;
-      
-                              const newImages = [];
-      
-                              files.forEach((file, idx) => {
-                                const img = new Image();
-                                img.src = URL.createObjectURL(file);
-      
-                                img.onload = () => {
-                                  const imageInfo = {
-                                    src: img.src,
-                                    alt: file.name,
-                                    filename: file.name,
-                                    size: file.size,
-                                    width: img.width,
-                                    height: img.height,
-                                  };
-      
-                                  newImages.push(imageInfo);
-      
-                                  // Khi đã load hết ảnh
-                                  if (newImages.length === files.length) {
-                                    setProduct((prev) => {
-                                      const updatedImages = [...(prev.images || []), ...newImages];
-                                      return {
-                                        ...prev,
-                                        images: updatedImages,
-                                        image: updatedImages[0], // ảnh đầu tiên = ảnh chính
-                                      };
-                                    });
-                                  }
-                                };
-                              });
-                            }}
-                          />
-      
-                          <label htmlFor="upload-images">
-                            <Button variant="text" component="span" sx={{ mt: 1 }}>
-                              Tải ảnh lên từ thiết bị
-                            </Button>
-                          </label>
-      
-                          <Typography variant="caption" display="block" mt={1}>
-                            (Dung lượng ảnh tối đa 2MB)
-                          </Typography>
-                        </Box>
-      
-                        {/* Preview ảnh */}
-                        {product.images && product.images.length > 0 && (
-                          <Box sx={{ mt: 2 }}>
-                            <Typography variant="body2" fontWeight="bold" mb={1}>
-                              Danh sách ảnh
-                            </Typography>
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                              {product.images.map((img, index) => (
-                                <Box
-                                  key={index}
-                                  sx={{
-                                    border:
-                                      index === 0 ? "2px solid #1976d2" : "1px solid lightgrey",
-                                    borderRadius: 2,
-                                    p: 1,
-                                    textAlign: "center",
-                                    width: 120,
-                                  }}
-                                >
-                                  <img
-                                    src={img.src}
-                                    alt={img.alt}
-                                    style={{ maxWidth: "100%", maxHeight: 100, borderRadius: 4 }}
-                                  />
-                                  <Typography variant="caption" display="block" noWrap>
-                                    {img.filename}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {(img.size / 1024).toFixed(1)} KB
-                                  </Typography>
-                                  {index === 0 && (
-                                    <Typography
-                                      variant="caption"
-                                      color="primary"
-                                      display="block"
-                                      fontWeight="bold"
-                                    >
-                                      Ảnh chính
-                                    </Typography>
-                                  )}
-                                </Box>
-                              ))}
-                            </Box>
-                          </Box>
-                        )}
-                      </CardContent>
-                    </Card>
-      
-      
-                    {/* Kênh bán hàng */}
-                    <Card sx={{ mb: 2 }}>
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                          Kênh bán hàng
-                        </Typography>
-      
-                        <FormGroup>
-                          {["Lazada", "Tiktok Shop", "Shopee", "Facebook"].map((ch) => (
-                            <FormControlLabel
-                              key={ch}
-                              control={<Checkbox defaultChecked />}
-                              label={ch}
-                            />
-                          ))}
-                        </FormGroup>
-      
-                        <Button size="small" sx={{ mt: 1 }}>
-                          Xem thêm
-                        </Button>
-                      </CardContent>
-                    </Card>
-      
-      
-                    {/* Bảng giá theo chi nhánh */}
-                    <Card sx={{ mb: 2 }}>
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="subtitle1" fontWeight="bold">
-                          Bảng giá theo chi nhánh
-                        </Typography>
-                        <Typography variant="body2" color="green">
-                          + bảng giá theo chi nhánh
-                        </Typography>
-                      </CardContent>
-                    </Card>
-      
-                    {/* Danh mục - Nhãn hiệu - Tag */}
-                    <Card sx={{ mb: 2 }}>
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Danh mục
-                        </Typography>
-                        <TextField fullWidth placeholder="Danh mục" margin="dense" />
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Nhãn hiệu
-                        </Typography>
-                        <TextField fullWidth placeholder="Nhãn hiệu" margin="dense" />
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Loại sản phẩm
-                        </Typography>
-                        <TextField fullWidth placeholder="Loại sản phẩm" margin="dense" />
-                        <Typography variant="body2" align="left" sx={{ mt: 1 }}>
-                          Tag
-                        </Typography>
-                        <TextField fullWidth placeholder="Tag" margin="dense" />
-                      </CardContent>
-                    </Card>
-      
-                    {/* Khung giao diện */}
-                    <Card>
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                          Khung giao diện
-                        </Typography>
-                        <FormControl fullWidth margin="dense">
-                          <Select
-                            value={product.templates}
-                            onChange={handleChange("templates")}
-                            sx={{textAlign: "left"}}
-                          >
-                            <MenuItem value="product">product</MenuItem>
-                            <MenuItem value="product.json">product.json</MenuItem>
-                            <MenuItem value="product.quickview">product.quickview</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </CardContent>
-                    </Card>
-      
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-      
-      {/* Action Buttons */}
-      <Box mt={3} textAlign="right">
-        {isChanged && (
+
+
+                {/* Bảng giá theo chi nhánh */}
+                <Card sx={{ mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Bảng giá theo chi nhánh
+                    </Typography>
+
+                    <Typography variant="body2" align="left" color="green" >
+                      • <Link to="#" style={{ textDecoration: "none", color: "blue" }}>
+                        bảng giá theo chi nhánh
+                      </Link>
+                    </Typography>
+                  </CardContent>
+                </Card>
+
+                {/* Danh mục - Nhãn hiệu - Loại sản phẩm - Tag */}
+                <Card sx={{ mb: 2 }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Danh mục
+                    </Typography>
+                    <Select fullWidth placeholder="Chọn danh mục" margin="dense" size="small" />
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Nhãn hiệu
+                    </Typography>
+                    <Select fullWidth placeholder="Chọn nhãn hiệu" margin="dense" size="small">
+                    </Select>
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Loại sản phẩm
+                    </Typography>
+                    <Select fullWidth placeholder="Chọn loại sản phẩm" margin="dense" size="small" />
+                    <Typography variant="body2" align="left" sx={{ mt: 1 }}>
+                      Tag
+                    </Typography>
+                    <Select fullWidth placeholder="Tìm kiếm hoặc thêm mới" margin="dense" size="small" />
+                  </CardContent>
+                </Card>
+
+                {/* Khung giao diện */}
+                <Card>
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                      Khung giao diện
+                    </Typography>
+                    <FormControl fullWidth margin="dense" size="small">
+                      <Select
+                        value={product.templates}
+                        onChange={handleChange("templates")}
+                        sx={{ textAlign: "left" }}
+                      >
+                        <MenuItem value="product">product</MenuItem>
+                        <MenuItem value="product.json">product.json</MenuItem>
+                        <MenuItem value="product.quickview">product.quickview</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </CardContent>
+                </Card>
+
+              </Box>
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Action Buttons */}
+        <Box mt={3} textAlign="right">
+          {isChanged && (
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={handleCancel}
+              sx={{ mr: 2 }}
+            >
+              Hủy
+            </Button>
+          )}
           <Button
-            variant="outlined"
-            color="inherit"
-            onClick={handleCancel}
-            sx={{ mr: 2 }}
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={!isChanged}
           >
-            Hủy
+            Lưu thay đổi
           </Button>
-        )}
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={!isChanged}
-        >
-          Lưu thay đổi
-        </Button>
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }

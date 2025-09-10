@@ -36,11 +36,7 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #0056b3;
-}
-
 .MuiTextField-root {
-  font-size: "14px";
-  min-height: "36px";
+  font-size: 14px;
+  min-height: 36px;
 }

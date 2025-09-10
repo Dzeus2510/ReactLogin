@@ -15,9 +15,10 @@ import {
   TextField,
   Button,
   Tabs,
-  Tab,
   styled,
-  Pagination
+  Pagination,
+  AppBar,
+  Toolbar
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -88,6 +89,7 @@ export default function DashboardProduct() {
 
   const isAllPageChecked =
     pageProductIds.length > 0 && pageProductIds.every((id) => selected.includes(id));
+
   const isPageIndeterminate =
     selected.some((id) => pageProductIds.includes(id)) && !isAllPageChecked;
 
@@ -133,251 +135,276 @@ export default function DashboardProduct() {
   };
 
   return (
-    <Box>
-      {/* Header */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h1" sx={{ fontSize: "22px", fontWeight: 550, textAlign: "left" }}>
-          Danh sách sản phẩm
-        </Typography>
-        <Button
-          component={Link}
-          variant="contained"
-          startIcon={<AddCircleOutlineIcon />}
-          to={"/add-product"}
-          sx={{
-            textTransform: "none",
-            borderRadius: "8px",
-            backgroundColor: "#rgb(0, 136, 255)",
-          }}
-        >
-          Thêm sản phẩm
-        </Button>
-      </Box>
+    <>
+      <AppBar
+        position="fixed"
+        elevation={1}
+        sx={{
+          bgcolor: "white",
+          color: "black",
+          top: 0,
+          left: 0,
+          mx: -3, // đè padding ngang main
+          width: "calc(100% + 48px)", // full width
+        }}
+      >
+        <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
+        </Toolbar>
+      </AppBar>
 
-      <TableContainer component={Paper}>
-        <Table>
+      <Box>
+        {/* Header */}
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Typography variant="h1" sx={{ fontSize: "22px", fontWeight: 550, textAlign: "left" }}>
+            Danh sách sản phẩm
+          </Typography>
+          <Button
+            component={Link}
+            variant="contained"
+            startIcon={<AddCircleOutlineIcon />}
+            to={"/add-product"}
+            sx={{
+              textTransform: "none",
+              borderRadius: "8px",
+              backgroundColor: "#rgb(0, 136, 255)",
+            }}
+          >
+            Thêm sản phẩm
+          </Button>
+        </Box>
 
-          <TableHead>
-            <TableRow >
-              <TableCell colSpan={7} sx={{ borderBottom: "none", p: 1, bgcolor: "white", }}>
-                <Tabs value={0} sx={{ minHeight: "38px" }}>
-                  <Button sx={{ textTransform: "none", fontSize: 14, bgcolor: "none", color: "rgb(0, 136, 255)", "&:hover": {bgcolor: "white"} }}>
-                    Tất cả
-                  </Button>
-                </Tabs>
-              </TableCell>
-            </TableRow>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow >
+                <TableCell colSpan={7} sx={{ borderBottom: "none", p: 1, bgcolor: "white", }}>
+                  <Tabs value={0} sx={{ minHeight: "38px" }}>
+                    <Button sx={{ textTransform: "none", fontSize: 14, bgcolor: "none", color: "rgb(0, 136, 255)", "&:hover": { bgcolor: "white" } }}>
+                      Tất cả
+                    </Button>
+                  </Tabs>
+                </TableCell>
+              </TableRow>
 
-            <TableRow>
-              <TableCell colSpan={7} sx={{ borderBottom: "none", p: 1, bgcolor: "white" }}>
-                <Box display="flex" justifyContent="flex-start">
-                  <TextField
-                    size="small"
-                    placeholder="Tìm kiếm theo mã sản phẩm, tên sản phẩm, barcode"
-                    variant="outlined"
-                    sx={{ width: "60%" }}
-                    InputProps={{
-                      startAdornment: (
-                        <SearchIcon sx={{ color: "action.active", mr: 1 }} />
-                      ),
-                      style: { fontFamily: "Inter" }
-                    }}
-                  />
-                </Box>
-              </TableCell>
-            </TableRow>
-
-            {selected.length > 0 ? (
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                <TableCell colSpan={7}>
-                  <Box display="flex" alignItems="center" gap={2}>
-
-                    <Checkbox
-                      checkedIcon={<IndeterminateCheckBoxIcon />}
+              <TableRow>
+                <TableCell colSpan={7} sx={{ borderBottom: "none", p: 1, bgcolor: "white" }}>
+                  <Box display="flex" justifyContent="flex-start">
+                    <TextField
                       size="small"
-                      checked={selected.length > 0 && selected.length === products.length}
-                      indeterminate={selected.length > 0 && selected.length < products.length}
-                      onChange={() => {
-                        if (selected.length > 0) {
-                          setSelected([]);
-                        } else {
-                          handleSelectAllPage();
-                        }
+                      placeholder="Tìm kiếm theo mã sản phẩm, tên sản phẩm, barcode"
+                      variant="outlined"
+                      sx={{ width: "60%" }}
+                      InputProps={{
+                        startAdornment: (
+                          <SearchIcon sx={{ color: "action.active", mr: 1 }} />
+                        ),
+                        style: { fontFamily: "Inter" }
                       }}
                     />
-
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Đã chọn {selected.length} sản phẩm
-                    </Typography>
-
-                    {selected.length < products.length && (
-                      <Button
-                        size="small"
-                        onClick={handleSelectAllGlobal}
-                        sx={{ textTransform: "none" }}
-                      >
-                        Chọn tất cả {products.length} sản phẩm
-                      </Button>
-                    )}
-
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={handleDeleteSelected}
-                      sx={{ textTransform: "none" }}
-                    >
-                      Xóa
-                    </Button>
                   </Box>
                 </TableCell>
               </TableRow>
-            ) : (
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                <TableCell padding="checkbox" sx={{ width: "2.5%" }}>
-                  <Checkbox
-                    size="small"
-                    checked={isAllPageChecked}
-                    indeterminate={isPageIndeterminate}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        handleSelectAllPage();
-                      } else {
-                        handleClearPage();
-                      }
-                    }}
-                  />
-                </TableCell>
-                <TableCell sx={{ width: "2.5%" }}></TableCell>
-                <StyledHeadCell sx={{ width: "35%" }}>Sản phẩm</StyledHeadCell>
-                <StyledHeadCell sx={{ width: "10%" }}>Có thể bán</StyledHeadCell>
-                <StyledHeadCell sx={{ width: "15%" }}>Loại</StyledHeadCell>
-                <StyledHeadCell sx={{ width: "15%" }}>Nhãn hiệu</StyledHeadCell>
-                <StyledHeadCell sx={{ width: "15%" }}>Ngày khởi tạo</StyledHeadCell>
-              </TableRow>
-            )}
 
-          </TableHead>
+              {selected.length > 0 ? (
+                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                  <TableCell padding="checkbox" sx={{ width: "2.5%" }} >
+                      <Checkbox
+                        checkedIcon={<IndeterminateCheckBoxIcon />}
+                        size="small"
+                        checked={selected.length > 0 && selected.length === products.length}
+                        indeterminate={selected.length > 0 && selected.length < products.length}
+                        onChange={() => {
+                          if (selected.length > 0) {
+                            setSelected([]);
+                          } else {
+                            handleSelectAllPage();
+                          }
+                        }}
+                      />
+                      </TableCell>
+                      <TableCell colSpan={6}>
+                      <Box display="flex" alignItems="center" gap={2} >
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        Đã chọn {selected.length} sản phẩm
+                      </Typography>
 
-          <TableBody>
-            {paginatedProducts.map((product) => {
-              const firstVariant = product.variants?.[0];
-              return (
-                <TableRow
-                  key={product.id}
-                  hover
-                  sx={{
-                    height: "70px",
-                    "&:hover": { backgroundColor: "#fafafa" },
-                  }}
-                >
-                  <TableCell padding="checkbox">
-                    <Checkbox size="small"
-                      checked={selected.includes(product.id)}
-                      onChange={() => handleCheckboxChange(product.id)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      {product.images?.length > 0 && (
-                        <img
-                          src={product.images[0].src }
-                          alt={product.images[0].filename}
-                          style={{
-                            width: 38,
-                            height: 38,
-                            objectFit: "cover",
-                            borderRadius: 6,
-                            border: "1px solid #d3d5d7",
-                          }}
-                        />
+                      {selected.length < products.length && (
+                        <Button
+                          size="small"
+                          onClick={handleSelectAllGlobal}
+                          sx={{ textTransform: "none" }}
+                        >
+                          Chọn tất cả {products.length} sản phẩm
+                        </Button>
                       )}
-                      {!product.images?.length && (
-                    <img src={"data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2024%2024'><path%20fill='rgb(211,%20213,%20215)'%20d='M19%203h-14c-1.103%200-2%20.897-2%202v14c0%201.103.897%202%202%202h14c1.103%200%202-.897%202-2v-14c0-1.103-.897-2-2-2m-14%2016v-14h14l.002%2014z'/><path%20fill='rgb(211,%20213,%20215)'%20d='m10%2014-1-1-3%204h12l-5-7z'/><path%20fill='rgb(211,%20213,%20215)'%20d='M8.5%2011a1.5%201.5%200%201%200%200-3%201.5%201.5%200%200%200%200%203'/></svg>"} 
-                    alt="None" 
-                    style={{
-                            width: 38,
-                            height: 38,
-                            objectFit: "cover",
-                            borderRadius: 6,
-                            border: "1px solid #d3d5d7",
-                          }}
-                    />
-                )}
+
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={handleDeleteSelected}
+                        sx={{ textTransform: "none" }}
+                      >
+                        Xóa
+                      </Button>
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    <Typography
-                      fontSize={14}
-                      component={Link}
-                      to={`/edit-product/${product.id}`}
-                      sx={{
-                        color: "rgb(0, 136, 255)",
-                        textDecoration: "none",
-                        "&:hover": { textDecoration: "underline" },
-                      }}
-                    >
-                      {product.productName}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell>
-                    {firstVariant ? firstVariant.inventoryQuantity : "-"}
-                  </TableCell>
-                  <TableCell>{product.type || "-"}</TableCell>
-                  <TableCell>{product.brand || "-"}</TableCell>
-                  <TableCell>
-                    {product.createdOn ? formatDate(product.createdOn) : "-"}
-                  </TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          borderTop="1px solid #e0e0e0"
-          p={1}
-        >
-          <Typography variant="body2">
-            {`Từ ${page * rowsPerPage + 1} đến ${Math.min(
-              (page + 1) * rowsPerPage,
-              products.length
-            )} trên tổng ${products.length}`}
-          </Typography>
+              ) : (
+                <TableRow sx={{backgroundColor: "#f5f5f5"}}>
+                  <TableCell padding="checkbox" sx={{ width: "2.5%" }}>
+                    <Checkbox
+                      size="small"
+                      checked={isAllPageChecked}
+                      indeterminate={isPageIndeterminate}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleSelectAllPage();
+                        } else {
+                          handleClearPage();
+                        }
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ width: "2.5%" }}></TableCell>
+                  <StyledHeadCell sx={{ width: "32%" }}>Sản phẩm</StyledHeadCell>
+                  <StyledHeadCell sx={{ width: "8%", textAlign: "center" }}>Có thể bán</StyledHeadCell>
+                  <StyledHeadCell sx={{ width: "7%" }}>Loại</StyledHeadCell>
+                  <StyledHeadCell sx={{ width: "15%", textAlign: "center" }}>Nhãn hiệu</StyledHeadCell>
+                  <StyledHeadCell sx={{ width: "15%", textAlign: "center" }}>Ngày khởi tạo</StyledHeadCell>
+                </TableRow>
+              )}
 
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="body2">Hiển thị</Typography>
+            </TableHead>
 
-            <TextField
-              select
-              size="small"
-              value={rowsPerPage}
-              onChange={handleChangeRowsPerPage}
-              SelectProps={{ native: true }}
-              sx={{ width: 80 }}
-            >
-              {[5, 10, 20, 50].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </TextField>
+            <TableBody>
+              {paginatedProducts.map((product) => {
+                const firstVariant = product.variants?.[0];
+                return (
+                  <TableRow
+                    key={product.id}
+                    hover
+                    sx={{
+                      height: "70px",
+                      "&:hover": { backgroundColor: "#fafafa" },
+                    }}
+                  >
+                    <TableCell padding="checkbox">
+                      <Checkbox size="small"
+                        checked={selected.includes(product.id)}
+                        onChange={() => handleCheckboxChange(product.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        {product.images?.length > 0 && (
+                          <img
+                            src={product.images[0].src}
+                            alt={product.images[0].filename}
+                            style={{
+                              width: 38,
+                              height: 38,
+                              objectFit: "cover",
+                              borderRadius: 6,
+                              border: "1px solid #d3d5d7",
+                            }}
+                          />
+                        )}
+                        {!product.images?.length && (
+                          <img src={"data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2024%2024'><path%20fill='rgb(211,%20213,%20215)'%20d='M19%203h-14c-1.103%200-2%20.897-2%202v14c0%201.103.897%202%202%202h14c1.103%200%202-.897%202-2v-14c0-1.103-.897-2-2-2m-14%2016v-14h14l.002%2014z'/><path%20fill='rgb(211,%20213,%20215)'%20d='m10%2014-1-1-3%204h12l-5-7z'/><path%20fill='rgb(211,%20213,%20215)'%20d='M8.5%2011a1.5%201.5%200%201%200%200-3%201.5%201.5%200%200%200%200%203'/></svg>"}
+                            alt="None"
+                            style={{
+                              width: 38,
+                              height: 38,
+                              objectFit: "cover",
+                              borderRadius: 6,
+                              border: "1px solid #d3d5d7",
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        fontSize={14}
+                        component={Link}
+                        to={`/edit-product/${product.id}`}
+                        sx={{
+                          color: "rgb(0, 136, 255)",
+                          textDecoration: "none",
+                          "&:hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        {product.productName}
+                      </Typography>
+                    </TableCell>
 
-            <Typography variant="body2">sản phẩm</Typography>
+                    <TableCell sx={{ textAlign: "center" }}>
+                      {firstVariant ? firstVariant.inventoryQuantity : "-"}
+                    </TableCell>
+                    <TableCell> {product.type || "-"}</TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>{product.brand || "-"}</TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>
+                      {product.createdOn ? formatDate(product.createdOn) : "-"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            borderTop="1px solid #e0e0e0"
+            p={1}
+          >
+            <Typography variant="body2">
+              {`Từ ${page * rowsPerPage + 1} đến ${Math.min(
+                (page + 1) * rowsPerPage,
+                products.length
+              )} trên tổng ${products.length}`}
+            </Typography>
+
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2">Hiển thị</Typography>
+
+              <TextField
+                select
+                size="small"
+                value={rowsPerPage}
+                onChange={handleChangeRowsPerPage}
+                SelectProps={{ native: true }}
+                sx={{
+                  width: 60,
+                  "& option": {
+                    fontSize: "14px"
+                  },
+                  "& .MuiSelect-root": {
+                    fontSize: "14px"
+                  },
+                }}
+              >
+                {[5, 10, 20, 50].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </TextField>
+
+              <Typography variant="body2">sản phẩm</Typography>
+            </Box>
+
+
+            <Pagination
+              count={Math.ceil(products.length / rowsPerPage)}
+              page={page + 1}
+              onChange={(e, value) => setPage(value - 1)}
+              color="primary"
+              shape="rounded"
+            />
           </Box>
-
-
-          <Pagination
-            count={Math.ceil(products.length / rowsPerPage)}
-            page={page + 1}
-            onChange={(e, value) => setPage(value - 1)}
-            color="primary"
-            shape="rounded"
-          />
-        </Box>
-      </TableContainer>
-    </Box>
+        </TableContainer>
+      </Box>
+    </>
   );
 }
